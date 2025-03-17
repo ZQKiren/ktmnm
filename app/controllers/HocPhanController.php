@@ -11,14 +11,12 @@ class HocPhanController {
         $this->db = $database->getConnection();
         $this->hocphan = new HocPhanModel($this->db);
         
-        // Bắt đầu phiên làm việc nếu chưa bắt đầu
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
     }
 
     public function list() {
-        // Lấy danh sách học phần
         $stmt = $this->hocphan->getAll();
         require_once 'app/views/hocphan/list.php';
     }
@@ -28,6 +26,7 @@ class HocPhanController {
             $this->hocphan->MaHP = $_POST['MaHP'];
             $this->hocphan->TenHP = $_POST['TenHP'];
             $this->hocphan->SoTinChi = $_POST['SoTinChi'];
+            $this->hocphan->SoLuongDuKien = $_POST['SoLuongDuKien']; 
             
             if ($this->hocphan->create()) {
                 $_SESSION['success'] = "Thêm học phần thành công.";
@@ -58,6 +57,7 @@ class HocPhanController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->hocphan->TenHP = $_POST['TenHP'];
             $this->hocphan->SoTinChi = $_POST['SoTinChi'];
+            $this->hocphan->SoLuongDuKien = $_POST['SoLuongDuKien'];
             
             if ($this->hocphan->update()) {
                 $_SESSION['success'] = "Cập nhật học phần thành công.";

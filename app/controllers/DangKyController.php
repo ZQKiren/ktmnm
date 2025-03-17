@@ -91,14 +91,12 @@ class DangKyController {
             $stmt->execute([$maHP]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            // Kiểm tra nếu số lượng sinh viên đã đạt tối đa
             if ($row['count'] >= $this->hocphan->SoLuongDuKien) {
                 $_SESSION['error'] = "Học phần {$this->hocphan->TenHP} đã đạt số lượng sinh viên tối đa.";
                 header("Location: index.php?controller=hocphan&action=list");
                 exit();
             }
             
-            // Kiểm tra xem học phần đã có trong giỏ hàng chưa
             $exists = false;
             foreach ($_SESSION['cart'] as $item) {
                 if ($item['MaHP'] === $maHP) {
@@ -108,7 +106,7 @@ class DangKyController {
             }
 
             if (!$exists) {
-                // Thêm vào giỏ hàng
+                
                 $_SESSION['cart'][] = [
                     'MaHP' => $this->hocphan->MaHP,
                     'TenHP' => $this->hocphan->TenHP,
@@ -127,7 +125,7 @@ class DangKyController {
     }
 
     public function cart() {
-        // Kiểm tra đăng nhập
+        
         if (!isset($_SESSION['MaSV'])) {
             header("Location: index.php?controller=dangky&action=login");
             exit();
@@ -137,7 +135,7 @@ class DangKyController {
     }
 
     public function remove() {
-        // Kiểm tra đăng nhập
+        
         if (!isset($_SESSION['MaSV'])) {
             header("Location: index.php?controller=dangky&action=login");
             exit();
@@ -150,7 +148,7 @@ class DangKyController {
 
         $maHP = $_GET['id'];
         
-        // Xóa học phần khỏi giỏ hàng
+
         foreach ($_SESSION['cart'] as $key => $item) {
             if ($item['MaHP'] === $maHP) {
                 unset($_SESSION['cart'][$key]);
@@ -159,7 +157,7 @@ class DangKyController {
             }
         }
         
-        // Sắp xếp lại mảng
+        
         $_SESSION['cart'] = array_values($_SESSION['cart']);
         
         header("Location: index.php?controller=dangky&action=cart");
@@ -167,13 +165,13 @@ class DangKyController {
     }
 
     public function clear() {
-        // Kiểm tra đăng nhập
+        
         if (!isset($_SESSION['MaSV'])) {
             header("Location: index.php?controller=dangky&action=login");
             exit();
         }
 
-        // Xóa toàn bộ giỏ hàng
+        
         $_SESSION['cart'] = [];
         $_SESSION['success'] = "Đã hủy tất cả đăng ký học phần.";
         
@@ -182,13 +180,13 @@ class DangKyController {
     }
 
     public function checkout() {
-        // Kiểm tra đăng nhập
+        
         if (!isset($_SESSION['MaSV'])) {
             header("Location: index.php?controller=dangky&action=login");
             exit();
         }
 
-        // Kiểm tra giỏ hàng có trống không
+        
         if (empty($_SESSION['cart'])) {
             $_SESSION['error'] = "Không có học phần nào để đăng ký.";
             header("Location: index.php?controller=dangky&action=cart");
@@ -196,47 +194,43 @@ class DangKyController {
         }
 
         try {
-            // Bắt đầu transaction
+            
             $this->db->beginTransaction();
             
-            // Thêm vào bảng DangKy
+            
             $query = "INSERT INTO DangKy(NgayDK, MaSV) VALUES (NOW(), ?)";
             $stmt = $this->db->prepare($query);
             $stmt->execute([$_SESSION['MaSV']]);
             
-            // Lấy ID đăng ký vừa tạo
+            
             $maDK = $this->db->lastInsertId();
             
-            // Thêm vào bảng ChiTietDangKy và cập nhật số lượng đăng ký
             $query = "INSERT INTO ChiTietDangKy(MaDK, MaHP) VALUES (?, ?)";
             $stmt = $this->db->prepare($query);
             
             foreach ($_SESSION['cart'] as $item) {
                 $stmt->execute([$maDK, $item['MaHP']]);
                 
-                // Cập nhật số lượng đăng ký còn lại
                 $this->hocphan->updateEnrollmentCount($item['MaHP'], 1);
             }
             
-            // Hoàn tất transaction
             $this->db->commit();
             
-            // Lưu thông tin đăng ký thành công để hiển thị
             $_SESSION['registration_success'] = true;
             $_SESSION['registration_id'] = $maDK;
             $_SESSION['registration_date'] = date('Y-m-d');
             $_SESSION['registered_courses'] = $_SESSION['cart'];
             
-            // Xóa giỏ hàng sau khi đăng ký thành công
+            
             $_SESSION['cart'] = [];
             $_SESSION['success'] = "Đăng ký học phần thành công!";
             
-            // Chuyển hướng đến trang thông báo thành công
+            
             header("Location: index.php?controller=dangky&action=success");
             exit();
             
         } catch (PDOException $e) {
-            // Rollback nếu có lỗi
+            
             $this->db->rollBack();
             $_SESSION['error'] = "Đăng ký học phần thất bại: " . $e->getMessage();
             header("Location: index.php?controller=dangky&action=cart");
@@ -245,13 +239,13 @@ class DangKyController {
     }
     
     public function success() {
-        // Kiểm tra đăng nhập và thông tin đăng ký
+        
         if (!isset($_SESSION['MaSV']) || !isset($_SESSION['registration_success'])) {
             header("Location: index.php?controller=hocphan&action=list");
             exit();
         }
         
-        // Lấy thông tin chi tiết đăng ký
+        
         $query = "SELECT dk.MaDK, dk.NgayDK, dk.MaSV, sv.HoTen, sv.NgaySinh, sv.MaNganh, ng.TenNganh
                   FROM DangKy dk
                   JOIN SinhVien sv ON dk.MaSV = sv.MaSV
@@ -261,7 +255,7 @@ class DangKyController {
         $stmt->execute([$_SESSION['registration_id']]);
         $dangky = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        // Lấy chi tiết các học phần đã đăng ký
+        
         $query = "SELECT ctdk.MaHP, hp.TenHP, hp.SoTinChi
                   FROM ChiTietDangKy ctdk
                   JOIN HocPhan hp ON ctdk.MaHP = hp.MaHP
@@ -272,22 +266,21 @@ class DangKyController {
         
         require_once 'app/views/dangky/success.php';
         
-        // Xóa thông tin đăng ký khỏi session sau khi hiển thị
+        
         unset($_SESSION['registration_success']);
         unset($_SESSION['registration_id']);
         unset($_SESSION['registration_date']);
         unset($_SESSION['registered_courses']);
     }
     
-    // Hiển thị lịch sử đăng ký
+    
     public function history() {
-        // Kiểm tra đăng nhập
+        
         if (!isset($_SESSION['MaSV'])) {
             header("Location: index.php?controller=dangky&action=login");
             exit();
         }
         
-        // Lấy danh sách đăng ký của sinh viên
         $query = "SELECT dk.MaDK, dk.NgayDK, 
                  (SELECT COUNT(*) FROM ChiTietDangKy WHERE MaDK = dk.MaDK) as SoLuongHocPhan,
                  (SELECT SUM(hp.SoTinChi) FROM ChiTietDangKy ctdk JOIN HocPhan hp ON ctdk.MaHP = hp.MaHP WHERE ctdk.MaDK = dk.MaDK) as TongSoTinChi
@@ -301,9 +294,8 @@ class DangKyController {
         require_once 'app/views/dangky/history.php';
     }
     
-    // Xem chi tiết một đăng ký
     public function detail() {
-        // Kiểm tra đăng nhập
+        
         if (!isset($_SESSION['MaSV'])) {
             header("Location: index.php?controller=dangky&action=login");
             exit();
@@ -316,7 +308,6 @@ class DangKyController {
         
         $maDK = $_GET['id'];
         
-        // Kiểm tra đăng ký có thuộc về sinh viên hiện tại không
         $query = "SELECT COUNT(*) as count FROM DangKy WHERE MaDK = ? AND MaSV = ?";
         $stmt = $this->db->prepare($query);
         $stmt->execute([$maDK, $_SESSION['MaSV']]);
@@ -328,7 +319,6 @@ class DangKyController {
             exit();
         }
         
-        // Lấy thông tin đăng ký
         $query = "SELECT dk.MaDK, dk.NgayDK, sv.MaSV, sv.HoTen, sv.NgaySinh, ng.MaNganh, ng.TenNganh
                   FROM DangKy dk
                   JOIN SinhVien sv ON dk.MaSV = sv.MaSV
@@ -338,7 +328,6 @@ class DangKyController {
         $stmt->execute([$maDK]);
         $dangky = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        // Lấy chi tiết học phần
         $query = "SELECT ctdk.MaHP, hp.TenHP, hp.SoTinChi
                   FROM ChiTietDangKy ctdk
                   JOIN HocPhan hp ON ctdk.MaHP = hp.MaHP

@@ -71,11 +71,10 @@ class NganhHocController {
 
         $this->nganhhoc->MaNganh = $_GET['id'];
         
-        // Kiểm tra xem ngành học có sinh viên không
         $studentCount = $this->nganhhoc->countStudents();
         
         if ($studentCount > 0) {
-            // Có sinh viên trong ngành học, không thể xóa
+            
             $_SESSION['error'] = "Không thể xóa ngành học vì có {$studentCount} sinh viên liên quan. Vui lòng chuyển sinh viên sang ngành khác trước.";
             header("Location: index.php?controller=nganhhoc&action=list");
             exit();
@@ -105,7 +104,6 @@ class NganhHocController {
             exit();
         }
         
-        // Lấy danh sách sinh viên trong ngành học này
         $query = "SELECT MaSV, HoTen, GioiTinh, NgaySinh, Hinh 
                   FROM SinhVien 
                   WHERE MaNganh = ? 

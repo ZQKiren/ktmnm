@@ -30,36 +30,31 @@ class SinhVienController {
             $this->sinhvien->NgaySinh = $_POST['NgaySinh'];
             $this->sinhvien->MaNganh = $_POST['MaNganh'];
             
-            // Xử lý upload hình ảnh
-            $this->sinhvien->Hinh = ""; // Giá trị mặc định
+            $this->sinhvien->Hinh = ""; 
             
             if(!empty($_FILES["Hinh"]["name"])) {
-                // Thư mục upload
+                
                 $target_dir = "public/uploads/";
                 
-                // Tạo thư mục nếu chưa tồn tại
                 if (!file_exists($target_dir)) {
                     mkdir($target_dir, 0777, true);
                 }
                 
-                // Tên file
                 $filename = basename($_FILES["Hinh"]["name"]);
                 $target_file = $target_dir . $filename;
                 $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
                 
-                // Kiểm tra loại file
                 $allowTypes = array('jpg', 'png', 'jpeg', 'gif');
                 if(in_array($imageFileType, $allowTypes)) {
-                    // Upload file
+                    
                     if(move_uploaded_file($_FILES["Hinh"]["tmp_name"], $target_file)) {
                         $this->sinhvien->Hinh = $filename;
-                        // Lưu tên file vào biến tạm để đảm bảo không bị mất
+                        
                         $uploadedImage = $filename;
                     }
                 }
             }
             
-            // Đảm bảo giá trị Hinh không bị mất
             if (isset($uploadedImage)) {
                 $this->sinhvien->Hinh = $uploadedImage;
             }
@@ -96,27 +91,23 @@ class SinhVienController {
             $this->sinhvien->NgaySinh = $_POST['NgaySinh'];
             $this->sinhvien->MaNganh = $_POST['MaNganh'];
             
-            // Xử lý upload hình ảnh mới (nếu có)
             if(!empty($_FILES["Hinh"]["name"])) {
-                // Thư mục upload
+                
                 $target_dir = "public/uploads/";
                 
-                // Tạo thư mục nếu chưa tồn tại
                 if (!file_exists($target_dir)) {
                     mkdir($target_dir, 0777, true);
                 }
                 
-                // Tên file
                 $filename = basename($_FILES["Hinh"]["name"]);
                 $target_file = $target_dir . $filename;
                 $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
-                
-                // Kiểm tra loại file
+                           
                 $allowTypes = array('jpg', 'png', 'jpeg', 'gif');
                 if(in_array($imageFileType, $allowTypes)) {
-                    // Upload file
+                
                     if(move_uploaded_file($_FILES["Hinh"]["tmp_name"], $target_file)) {
-                        // Xóa file cũ nếu có
+                        
                         if(!empty($this->sinhvien->Hinh) && file_exists($target_dir . $this->sinhvien->Hinh)) {
                             unlink($target_dir . $this->sinhvien->Hinh);
                         }
@@ -144,7 +135,6 @@ class SinhVienController {
 
         $this->sinhvien->MaSV = $_GET['id'];
         
-        // Lấy thông tin sinh viên trước khi xóa
         if (!$this->sinhvien->getById()) {
             $_SESSION['error'] = "Không tìm thấy sinh viên.";
             header("Location: index.php?controller=sinhvien&action=list");
@@ -153,7 +143,6 @@ class SinhVienController {
         
         $hinh = $this->sinhvien->Hinh;
         
-        // Kiểm tra xem sinh viên có đăng ký học phần nào không
         $query = "SELECT COUNT(*) as count FROM DangKy WHERE MaSV = ?";
         $stmt = $this->db->prepare($query);
         $stmt->execute([$this->sinhvien->MaSV]);
@@ -166,7 +155,7 @@ class SinhVienController {
         }
         
         if ($this->sinhvien->delete()) {
-            // Xóa hình ảnh kèm theo nếu có
+            
             if(!empty($hinh)) {
                 $target_dir = "public/uploads/";
                 if(file_exists($target_dir . $hinh)) {
@@ -197,7 +186,6 @@ class SinhVienController {
             exit();
         }
         
-        // Lấy thông tin các học phần đã đăng ký
         $query = "SELECT dk.MaDK, dk.NgayDK, hp.MaHP, hp.TenHP, hp.SoTinChi
                   FROM DangKy dk 
                   JOIN ChiTietDangKy ctdk ON dk.MaDK = ctdk.MaDK
